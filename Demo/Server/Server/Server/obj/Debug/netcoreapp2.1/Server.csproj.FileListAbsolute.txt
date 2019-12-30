@@ -1,0 +1,11 @@
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\bin\Debug\netcoreapp2.1\Server.deps.json
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\bin\Debug\netcoreapp2.1\Server.runtimeconfig.json
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\bin\Debug\netcoreapp2.1\Server.runtimeconfig.dev.json
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\bin\Debug\netcoreapp2.1\Server.dll
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\bin\Debug\netcoreapp2.1\Server.pdb
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\obj\Debug\netcoreapp2.1\Server.csprojAssemblyReference.cache
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\obj\Debug\netcoreapp2.1\Server.csproj.CoreCompileInputs.cache
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\obj\Debug\netcoreapp2.1\Server.AssemblyInfoInputs.cache
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\obj\Debug\netcoreapp2.1\Server.AssemblyInfo.cs
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\obj\Debug\netcoreapp2.1\Server.dll
+C:\Users\123456\Documents\GitHub\cooling\Demo\Server\Server\Server\obj\Debug\netcoreapp2.1\Server.pdb
