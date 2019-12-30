@@ -11,31 +11,31 @@ namespace Server
         public Socket socket;
         public Byte[] readBuff = new byte[1024];
         public int buffCount;
-        public bool ReadCliented()
-        {
-            int count;
-            try
-            {
-                count = socket.Receive(readBuff, buffCount, 1024 - buffCount, 0);
-                buffCount += count;
-            }
-            catch (SocketException ex)
-            {
-                socket.Close();
-                ServerManager.Instance.RemoveClient(socket);
-                Console.WriteLine("client receive fail");
-                return false;
-            }
-            if (count == 0)
-            {
-                socket.Close();
-                ServerManager.Instance.RemoveClient(socket);
-                Console.WriteLine("client receive fail");
-                return false;
-            }
-            OnReceiveData();
-            return true;
-        }
+        //public bool ReadCliented()
+        //{
+        //    int count;
+        //    try
+        //    {
+        //        count = socket.Receive(readBuff, buffCount, 1024 - buffCount, 0);
+        //        buffCount += count;
+        //    }
+        //    catch (SocketException ex)
+        //    {
+        //        socket.Close();
+        //        ServerManager.Instance.RemoveClient(socket);
+        //        Console.WriteLine("client receive fail");
+        //        return false;
+        //    }
+        //    if (count == 0)
+        //    {
+        //        socket.Close();
+        //        ServerManager.Instance.RemoveClient(socket);
+        //        Console.WriteLine("client receive fail");
+        //        return false;
+        //    }
+        //    OnReceiveData();
+        //    return true;
+        //}
 
         void OnReceiveData()
         {
@@ -57,6 +57,32 @@ namespace Server
             buffCount -= start;
             OnReceiveData();
         }
+        public void ReceiveCallBack(IAsyncResult ar)
+        {
+            try
+            {
+                Client state = ar.AsyncState as Client;
+                Socket client = state.socket;
+                int count = client.EndReceive(ar);
+                if (count == 0)
+                {
+                    client.Close();
+                    ServerManager.Instance.RemoveClient(client);
+                    Console.Write("客户端关闭");
+                    return;
+                }
+                buffCount += count;
+                OnReceiveData();
+                client.BeginReceive(state.readBuff, 0, 1024 - buffCount, 0, ReceiveCallBack, state);
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("接收数据失败");
+            }
+        }
+
+
+
         public void ReceiveMsg(string str)
         {
             Console.WriteLine("收到消息:" + str);
@@ -92,40 +118,67 @@ namespace Server
             listened.Bind(ipEp);
             listened.Listen(0);
             Console.WriteLine("Socket Open Ready");
-            List<Socket> checkRead = new List<Socket>();
-            while (true)
+
+            listened.BeginAccept(AcceptCallBack, listened);
+
+            //List<Socket> checkRead = new List<Socket>();
+            //while (true)
+            //{
+            //    checkRead.Clear();
+            //    checkRead.Add(listened);
+            //    foreach (Client cs in clients.Values)
+            //    {
+            //        checkRead.Add(cs.socket);
+            //    }
+            //    Socket.Select(checkRead, null, null, 1000);
+            //    //多路复用，检测是否有可读或可写                
+            //    foreach (Socket s in checkRead)
+            //    {
+            //        if (s == listened)
+            //        {
+            //            ReadListened(s);
+            //        }
+            //        else
+            //        {
+            //            clients[s].ReadCliented();
+            //        }
+            //    }
+            //}
+        }
+
+
+
+        //static void ReadListened(Socket listenfd)
+        //{
+        //    Console.WriteLine("accept client");
+        //    Socket cliented = listenfd.Accept();
+        //    Client state = new Client();
+        //    state.socket = cliented;
+        //    clients.Add(cliented, state);
+        //}
+
+        void AcceptCallBack(IAsyncResult ar)
+        {
+            try
             {
-                checkRead.Clear();
-                checkRead.Add(listened);
-                foreach (Client cs in clients.Values)
-                {
-                    checkRead.Add(cs.socket);
-                }
-                Socket.Select(checkRead, null, null, 1000);
-                //多路复用，检测是否有可读或可写                
-                foreach (Socket s in checkRead)
-                {
-                    if (s == listened)
-                    {
-                        ReadListened(s);
-                    }
-                    else
-                    {
-                        clients[s].ReadCliented();
-                    }
-                }
+                Console.WriteLine("客户端接入");
+                Socket server = ar.AsyncState as Socket;
+                Socket client = server.EndAccept(ar);
+                Client clientState = new Client();
+                clientState.socket = client;
+                //将连接进来的客户端保存起来            
+                clients.Add(client,clientState);
+                //接收此客户端发来的信息            
+                client.BeginReceive(clientState.readBuff,0,1024,0, clientState.ReceiveCallBack, clientState);
+                //继续监听新的客户端接入            
+                server.BeginAccept(AcceptCallBack, server);
+            }
+            catch (SocketException e)
+            {
+                Console.Write("Accept fail");
             }
         }
-
-        static void ReadListened(Socket listenfd)
-        {
-            Console.WriteLine("accept client");
-            Socket cliented = listenfd.Accept();
-            Client state = new Client();
-            state.socket = cliented;
-            clients.Add(cliented, state);
-        }
-
+        
         public void RemoveClient(Socket socket)
         {
             clients.Remove(socket);

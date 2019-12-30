@@ -10,6 +10,19 @@ namespace Server
         {
             Thread thread = new Thread(StartSocket);
             thread.Start();
+            Thread threadUpdate = new Thread(Update);
+            threadUpdate.Start();
+        }
+
+        static int i = 0;
+        static void Update()
+        {
+            while(true)
+            {
+                Thread.Sleep(1000);
+                i++;
+                Console.WriteLine(i);
+            }
         }
 
         static void StartSocket()
