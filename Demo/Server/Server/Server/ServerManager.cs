@@ -11,7 +11,52 @@ namespace Server
         public Socket socket;
         public Byte[] readBuff = new byte[1024];
         public int buffCount;
+        public bool ReadCliented()
+        {
+            int count;
+            try
+            {
+                count = socket.Receive(readBuff, buffCount, 1024 - buffCount, 0);
+                buffCount += count;
+            }
+            catch (SocketException ex)
+            {
+                socket.Close();
+                ServerManager.Instance.RemoveClient(socket);
+                Console.WriteLine("client receive fail");
+                return false;
+            }
+            if (count == 0)
+            {
+                socket.Close();
+                ServerManager.Instance.RemoveClient(socket);
+                Console.WriteLine("client receive fail");
+                return false;
+            }
+            OnReceiveData();
+            return true;
+        }
 
+        void OnReceiveData()
+        {
+            if (buffCount < 2)
+            {
+                return;
+            }
+            int bodyLength = BitConverter.ToInt16(readBuff, 0);//从第一位开始，取前两个            
+            if (buffCount < 2 + bodyLength)
+            {
+                return;
+            }
+            string recStr = Encoding.Default.GetString(readBuff, 2, bodyLength);
+            ReceiveMsg(recStr);
+            //继续处理剩余字节            
+            int start = 2 + bodyLength;
+            int count = buffCount - start;
+            Array.Copy(readBuff, start, readBuff, 0, count);
+            buffCount -= start;
+            OnReceiveData();
+        }
         public void ReceiveMsg(string str)
         {
             Console.WriteLine("收到消息:" + str);
@@ -66,7 +111,7 @@ namespace Server
                     }
                     else
                     {
-                        ReadCliented(s);
+                        clients[s].ReadCliented();
                     }
                 }
             }
@@ -80,53 +125,10 @@ namespace Server
             state.socket = cliented;
             clients.Add(cliented, state);
         }
-        static bool ReadCliented(Socket client)
+
+        public void RemoveClient(Socket socket)
         {
-            Client state = clients[client];
-            int count;
-            try
-            {
-                count = client.Receive(state.readBuff, state.buffCount, 1024 - state.buffCount, 0);
-                state.buffCount += count;
-            }
-            catch (SocketException ex)
-            {
-                client.Close();
-                clients.Remove(client);
-                Console.WriteLine("client receive fail");
-                return false;
-            }
-            if (count == 0)
-            {
-                client.Close();
-                clients.Remove(client);
-                Console.WriteLine("client receive fail");
-                return false;
-            }
-            OnReceiveData(state);
-            return true;
-        }
-        static void OnReceiveData(Client state)
-        {
-            Socket client = state.socket;
-            int buffCount = state.buffCount;
-            if (buffCount < 2)
-            {
-                return;
-            }
-            int bodyLength = BitConverter.ToInt16(state.readBuff, 0);//从第一位开始，取前两个            
-            if (buffCount < 2 + bodyLength)
-            {
-                return;
-            }
-            string recStr = Encoding.Default.GetString(state.readBuff, 2, bodyLength);
-            state.ReceiveMsg(recStr);
-            //继续处理剩余字节            
-            int start = 2 + bodyLength;
-            int count = buffCount - start;
-            Array.Copy(state.readBuff, start, state.readBuff, 0, count);
-            state.buffCount -= start;
-            OnReceiveData(state);
+            clients.Remove(socket);
         }
 
         public void Close()
