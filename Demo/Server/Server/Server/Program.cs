@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Server
 {
@@ -7,8 +8,14 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            ServerManager.Instance.InitServer(null, "10256");
-            ServerManager.Instance.Close();
+            Thread thread = new Thread(StartSocket);
+            thread.Start();
         }
+
+        static void StartSocket()
+        {
+            ServerManager.Instance.InitServer(null, "10236");
+        }
+        
     }
 }

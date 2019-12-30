@@ -11,6 +11,19 @@ namespace Server
         public Socket socket;
         public Byte[] readBuff = new byte[1024];
         public int buffCount;
+
+        public void ReceiveMsg(string str)
+        {
+            Console.WriteLine("收到消息:" + str);
+        }
+
+        public void PostMsg()
+        {
+            string msg = "Test Message";
+            byte[] sendBytes = Encoding.Default.GetBytes(msg);
+            socket.Send(sendBytes);
+            Console.WriteLine("向客户端发送" + msg);
+        }
     }
     class ServerManager: Singleton<ServerManager>
     {
@@ -62,10 +75,10 @@ namespace Server
         static void ReadListened(Socket listenfd)
         {
             Console.WriteLine("accept client");
-            Socket clientfd = listenfd.Accept();
+            Socket cliented = listenfd.Accept();
             Client state = new Client();
-            state.socket = clientfd;
-            clients.Add(clientfd, state);
+            state.socket = cliented;
+            clients.Add(cliented, state);
         }
         static bool ReadCliented(Socket client)
         {
@@ -107,13 +120,7 @@ namespace Server
                 return;
             }
             string recStr = Encoding.Default.GetString(state.readBuff, 2, bodyLength);
-            Console.WriteLine("收到消息:"+ recStr);
-            foreach (Client s in clients.Values)
-            {
-                byte[] sendBytes = Encoding.Default.GetBytes(recStr);
-                s.socket.Send(sendBytes);
-                Console.WriteLine("向客户端发送" + recStr);
-            }            
+            state.ReceiveMsg(recStr);
             //继续处理剩余字节            
             int start = 2 + bodyLength;
             int count = buffCount - start;
