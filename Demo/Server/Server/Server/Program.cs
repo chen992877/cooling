@@ -8,8 +8,7 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            Thread thread = new Thread(StartSocket);
-            thread.Start();
+            ServerManager.Instance.InitServer(null, "10236");
             Thread threadUpdate = new Thread(Update);
             threadUpdate.Start();
         }
@@ -23,11 +22,6 @@ namespace Server
                 i++;
                 Console.WriteLine(i);
             }
-        }
-
-        static void StartSocket()
-        {
-            ServerManager.Instance.InitServer(null, "10236");
         }
         
     }

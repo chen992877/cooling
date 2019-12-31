@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace Server
 {
@@ -166,12 +167,18 @@ namespace Server
                 Socket client = server.EndAccept(ar);
                 Client clientState = new Client();
                 clientState.socket = client;
-                //将连接进来的客户端保存起来            
-                clients.Add(client,clientState);
-                //接收此客户端发来的信息            
-                client.BeginReceive(clientState.readBuff,0,1024,0, clientState.ReceiveCallBack, clientState);
-                //继续监听新的客户端接入            
-                server.BeginAccept(AcceptCallBack, server);
+                //将连接进来的客户端保存起来       
+                lock(clients)
+                {
+                    clients.Add(client, clientState);
+                    //接收此客户端发来的信息       
+                    Thread startThread = new Thread(() => {
+                        client.BeginReceive(clientState.readBuff, 0, 1024, 0, clientState.ReceiveCallBack, clientState);
+                    });
+                    startThread.Start();
+                    //继续监听新的客户端接入            
+                    server.BeginAccept(AcceptCallBack, server);
+                }
             }
             catch (SocketException e)
             {
@@ -181,7 +188,10 @@ namespace Server
         
         public void RemoveClient(Socket socket)
         {
-            clients.Remove(socket);
+            lock (clients)
+            {
+                clients.Remove(socket);
+            }
         }
 
         public void Close()
