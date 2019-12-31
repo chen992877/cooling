@@ -7,36 +7,30 @@ using System.Threading;
 
 namespace Server
 {
+    public class ByteArray
+    {
+        public byte[] bytes;
+        public int readIndex;
+        private int writeIndex;
+        public int length
+        { get
+            {
+                return writeIndex - readIndex;
+            }
+        }
+        public ByteArray(byte[] defaultByte)
+        {
+            bytes = defaultByte;
+            readIndex = 0;
+            writeIndex = defaultByte.Length;
+        }
+    }
+
     class Client
     {
         public Socket socket;
         public Byte[] readBuff = new byte[1024];
         public int buffCount;
-        //public bool ReadCliented()
-        //{
-        //    int count;
-        //    try
-        //    {
-        //        count = socket.Receive(readBuff, buffCount, 1024 - buffCount, 0);
-        //        buffCount += count;
-        //    }
-        //    catch (SocketException ex)
-        //    {
-        //        socket.Close();
-        //        ServerManager.Instance.RemoveClient(socket);
-        //        Console.WriteLine("client receive fail");
-        //        return false;
-        //    }
-        //    if (count == 0)
-        //    {
-        //        socket.Close();
-        //        ServerManager.Instance.RemoveClient(socket);
-        //        Console.WriteLine("client receive fail");
-        //        return false;
-        //    }
-        //    OnReceiveData();
-        //    return true;
-        //}
 
         void OnReceiveData()
         {
@@ -81,26 +75,65 @@ namespace Server
                 Console.WriteLine("接收数据失败");
             }
         }
+        Queue<ByteArray> writeQueue = new Queue<ByteArray>();
+        public void Send(string msg)
+        {
+            if (socket == null)
+                return;
+            if (!socket.Connected)
+                return;
+            byte[] bodyBytes = Encoding.Default.GetBytes(msg);
+            //协议编码        
+            Int16 bodyLenth = (Int16)bodyBytes.Length;
+            //计算协议长度        
+            byte[] sendBytes = BitConverter.GetBytes(bodyLenth);
+            //将协议长度信息转换为字节数组         
+            if (!BitConverter.IsLittleEndian)//判断大小端        
+            {           
+                Console.WriteLine("Reverse lengthByte");
+                Array.Reverse(sendBytes);
+            }
+            bodyBytes.CopyTo(sendBytes, sendBytes.Length);//将协议长度信息和协议信息拼接在一起，其中协议长度信息占两个字节         
+            ByteArray ba = new ByteArray(sendBytes);
+            lock (writeQueue)
+            {
+                writeQueue.Enqueue(ba);
+            }
+            if (writeQueue.Count == 1)
+            {
+                ba = writeQueue.Dequeue();
+                socket.BeginSend(sendBytes, 0, sendBytes.Length, 0, SendCallBack, socket);
+            }
+        }
+        ByteArray ba;
+        private void SendCallBack(IAsyncResult result)//异步发送协议回调    
+        {
+            Socket socket = (Socket)result.AsyncState;
+            int count = socket.EndSend(result);
 
-
+            ba.readIndex += count;//记录发送数量
+            if (ba.length == 0)//发送完成则取下一条        
+            {
+                ba = null;
+                if(writeQueue.Count > 0)
+                    ba = writeQueue.Dequeue();
+            }     
+            
+            if (ba != null)//没发送完成则记录发送        
+            {
+                socket.BeginSend(ba.bytes,ba.readIndex,ba.length,0,SendCallBack,socket);
+            }
+        }
 
         public void ReceiveMsg(string str)
         {
             Console.WriteLine("收到消息:" + str);
         }
-
-        public void PostMsg()
-        {
-            string msg = "Test Message";
-            byte[] sendBytes = Encoding.Default.GetBytes(msg);
-            socket.Send(sendBytes);
-            Console.WriteLine("向客户端发送" + msg);
-        }
     }
     class ServerManager: Singleton<ServerManager>
     {
-        static Socket listened;
-        static Dictionary<Socket, Client> clients = new Dictionary<Socket, Client>();
+        Socket listened;
+        Dictionary<Socket, Client> clients = new Dictionary<Socket, Client>();
 
         public void InitServer(string ip, string port)
         {
@@ -121,42 +154,7 @@ namespace Server
             Console.WriteLine("Socket Open Ready");
 
             listened.BeginAccept(AcceptCallBack, listened);
-
-            //List<Socket> checkRead = new List<Socket>();
-            //while (true)
-            //{
-            //    checkRead.Clear();
-            //    checkRead.Add(listened);
-            //    foreach (Client cs in clients.Values)
-            //    {
-            //        checkRead.Add(cs.socket);
-            //    }
-            //    Socket.Select(checkRead, null, null, 1000);
-            //    //多路复用，检测是否有可读或可写                
-            //    foreach (Socket s in checkRead)
-            //    {
-            //        if (s == listened)
-            //        {
-            //            ReadListened(s);
-            //        }
-            //        else
-            //        {
-            //            clients[s].ReadCliented();
-            //        }
-            //    }
-            //}
         }
-
-
-
-        //static void ReadListened(Socket listenfd)
-        //{
-        //    Console.WriteLine("accept client");
-        //    Socket cliented = listenfd.Accept();
-        //    Client state = new Client();
-        //    state.socket = cliented;
-        //    clients.Add(cliented, state);
-        //}
 
         void AcceptCallBack(IAsyncResult ar)
         {
