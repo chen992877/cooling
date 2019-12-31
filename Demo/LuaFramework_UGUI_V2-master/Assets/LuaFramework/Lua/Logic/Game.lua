@@ -34,18 +34,11 @@ end
 function Game.OnInitOK()
     AppConst.SocketPort = 2012;
     AppConst.SocketAddress = "127.0.0.1";
-    networkMgr:SendConnect();
+    --networkMgr:SendConnect();
 
     --注册LuaView--
     this.InitViewPanels();
-
-    this.test_class_func();
-    this.test_pblua_func();
-    this.test_cjson_func();
-    this.test_pbc_func();
-    this.test_lpeg_func();
-    this.test_sproto_func();
-    coroutine.start(this.test_coroutine);
+    --coroutine.start(this.test_coroutine);
 
     CtrlManager.Init();
     local ctrl = CtrlManager.GetCtrl(CtrlNames.Prompt);

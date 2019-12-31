@@ -91,7 +91,6 @@ public static class LuaBinder
 		LuaFramework_UtilWrap.Register(L);
 		LuaFramework_AppConstWrap.Register(L);
 		LuaFramework_LuaHelperWrap.Register(L);
-		LuaFramework_ByteBufferWrap.Register(L);
 		LuaFramework_LuaBehaviourWrap.Register(L);
 		LuaFramework_GameManagerWrap.Register(L);
 		LuaFramework_LuaManagerWrap.Register(L);
