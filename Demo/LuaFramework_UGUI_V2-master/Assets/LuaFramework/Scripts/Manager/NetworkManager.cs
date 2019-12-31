@@ -18,6 +18,7 @@ namespace LuaFramework {
         }
 
         void Awake() {
+            SocketClient.Init();
         }
 
         public void OnInit() {
@@ -39,6 +40,7 @@ namespace LuaFramework {
         /// Îö¹¹º¯Êý
         /// </summary>
         new void OnDestroy() {
+            SocketClient.Close();
             Debug.Log("~NetworkManager was destroy");
         }
     }
