@@ -32,6 +32,20 @@ namespace Server
         public Byte[] readBuff = new byte[1024];
         public int buffCount;
 
+        public long preTime;
+        
+        public void CheckClose()
+        {
+            if (preTime == 0)
+                preTime = DateTime.Now.ToFileTime();
+            if (DateTime.Now.ToFileTime() - preTime > 100000000)
+            {
+                //socket.Close();
+                ServerManager.Instance.RemoveClient(socket);
+                socket.Disconnect(false);
+                Console.Write("客户端关闭");
+            }
+        }
         void OnReceiveData()
         {
             if (buffCount < 2)
@@ -66,6 +80,7 @@ namespace Server
                     Console.Write("客户端关闭");
                     return;
                 }
+                preTime = DateTime.Now.ToFileTime();
                 buffCount += count;
                 OnReceiveData();
                 client.BeginReceive(state.readBuff, 0, 1024 - buffCount, 0, ReceiveCallBack, state);
@@ -76,6 +91,7 @@ namespace Server
             }
         }
         Queue<ByteArray> writeQueue = new Queue<ByteArray>();
+        ByteArray baCur;
         public void Send(string msg)
         {
             if (socket == null)
@@ -86,14 +102,16 @@ namespace Server
             //协议编码        
             Int16 bodyLenth = (Int16)bodyBytes.Length;
             //计算协议长度        
-            byte[] sendBytes = BitConverter.GetBytes(bodyLenth);
+            byte[] lengthBytes = BitConverter.GetBytes(bodyLenth);
             //将协议长度信息转换为字节数组         
             if (!BitConverter.IsLittleEndian)//判断大小端        
             {           
                 Console.WriteLine("Reverse lengthByte");
-                Array.Reverse(sendBytes);
+                Array.Reverse(lengthBytes);
             }
-            bodyBytes.CopyTo(sendBytes, sendBytes.Length);//将协议长度信息和协议信息拼接在一起，其中协议长度信息占两个字节         
+            byte[] sendBytes = new byte[bodyBytes.Length + lengthBytes.Length];
+            lengthBytes.CopyTo(sendBytes, 0);
+            bodyBytes.CopyTo(sendBytes, lengthBytes.Length);
             ByteArray ba = new ByteArray(sendBytes);
             lock (writeQueue)
             {
@@ -101,32 +119,33 @@ namespace Server
             }
             if (writeQueue.Count == 1)
             {
-                ba = writeQueue.Dequeue();
+                baCur = writeQueue.Dequeue();
                 socket.BeginSend(sendBytes, 0, sendBytes.Length, 0, SendCallBack, socket);
             }
         }
-        ByteArray ba;
+        
         private void SendCallBack(IAsyncResult result)//异步发送协议回调    
         {
             Socket socket = (Socket)result.AsyncState;
             int count = socket.EndSend(result);
 
-            ba.readIndex += count;//记录发送数量
-            if (ba.length == 0)//发送完成则取下一条        
+            baCur.readIndex += count;//记录发送数量
+            if (baCur.length == 0)//发送完成则取下一条        
             {
-                ba = null;
+                baCur = null;
                 if(writeQueue.Count > 0)
-                    ba = writeQueue.Dequeue();
+                    baCur = writeQueue.Dequeue();
             }     
             
-            if (ba != null)//没发送完成则记录发送        
+            if (baCur != null)//没发送完成则记录发送        
             {
-                socket.BeginSend(ba.bytes,ba.readIndex,ba.length,0,SendCallBack,socket);
+                socket.BeginSend(baCur.bytes, baCur.readIndex, baCur.length,0,SendCallBack,socket);
             }
         }
 
         public void ReceiveMsg(string str)
         {
+            Send(str);
             Console.WriteLine("收到消息:" + str);
         }
     }
@@ -196,6 +215,19 @@ namespace Server
         {
             if (listened != null)
                 listened.Close();
+        }
+
+        public void Update()
+        {
+            List<Socket> list = new List<Socket>();
+            foreach(var pair in clients)
+            {
+                list.Add(pair.Key);
+            }
+            for(int i = 0; i < list.Count; i++)
+            {
+                clients[list[i]].CheckClose();
+            }
         }
     }
 }

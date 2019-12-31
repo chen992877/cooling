@@ -8,7 +8,7 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            ServerManager.Instance.InitServer(null, "10236");
+            ServerManager.Instance.InitServer("127.0.0.1", "10236");
             Thread threadUpdate = new Thread(Update);
             threadUpdate.Start();
         }
@@ -16,11 +16,10 @@ namespace Server
         static int i = 0;
         static void Update()
         {
-            while(true)
+            while (true)
             {
-                Thread.Sleep(1000);
-                i++;
-                Console.WriteLine(i);
+                ServerManager.Instance.Update();
+                Thread.Sleep(10);
             }
         }
         
