@@ -43,7 +43,7 @@ namespace Server
                 //socket.Close();
                 ServerManager.Instance.RemoveClient(socket);
                 socket.Disconnect(false);
-                Console.Write("客户端关闭");
+                Console.WriteLine("客户端关闭Check");
             }
         }
         void OnReceiveData()
@@ -77,7 +77,7 @@ namespace Server
                 {
                     client.Close();
                     ServerManager.Instance.RemoveClient(client);
-                    Console.Write("客户端关闭");
+                    Console.WriteLine("客户端关闭");
                     return;
                 }
                 preTime = DateTime.Now.ToFileTime();
