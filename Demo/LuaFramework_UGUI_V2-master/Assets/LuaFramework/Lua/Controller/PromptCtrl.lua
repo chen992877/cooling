@@ -2,6 +2,7 @@ require "Common/define"
 
 require "3rd/pblua/login_pb"
 require "3rd/pbc/protobuf"
+local json = require "cjson"
 
 local sproto = require "3rd/sproto/sproto"
 local core = require "sproto.core"
@@ -37,6 +38,18 @@ function PromptCtrl.OnCreate(obj)
 
 	prompt:AddClick(PromptPanel.btnOpen, this.OnClick);
 	resMgr:LoadPrefab('prompt', { 'PromptItem' }, this.InitPanel);
+    print('-----------------------------------------------------')
+    coroutine.start(this.test_coroutine);
+end
+
+local x = {
+    id = 1,
+    name = 'rrrrrrrrrrrrrrrrrrrr'
+}
+
+function PromptCtrl.test_coroutine()
+    coroutine.wait(1);
+    Network.SendMsg(json.encode(x))
 end
 
 --初始化面板--

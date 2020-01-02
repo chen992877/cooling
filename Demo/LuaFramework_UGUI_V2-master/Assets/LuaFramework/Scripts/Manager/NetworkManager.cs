@@ -18,10 +18,11 @@ namespace LuaFramework {
         }
 
         void Awake() {
-            SocketClient.Init();
+            
         }
 
         public void OnInit() {
+            SocketClient.Init();
             CallMethod("Start");
         }
 
@@ -35,7 +36,18 @@ namespace LuaFramework {
         public object[] CallMethod(string func, params object[] args) {
             return Util.CallMethod("Network", func, args);
         }
+        private void Update()
+        {
+            while(SocketClient.MsgQueue.Count > 0)
+            {
+                CallMethod("ReceiveMsg", SocketClient.MsgQueue.Dequeue());
+            }
+        }
 
+        public void SendMsg(string str)
+        {
+            SocketClient.Send(str);
+        }
         /// <summary>
         /// Îö¹¹º¯Êý
         /// </summary>

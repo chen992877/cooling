@@ -10,10 +10,10 @@ public class LuaFramework_AppConstWrap
 		L.RegFunction("New", _CreateLuaFramework_AppConst);
 		L.RegFunction("__tostring", ToLua.op_ToString);
 		L.RegConstant("DebugMode", 0);
-		L.RegConstant("ExampleMode", 1);
+		L.RegConstant("ExampleMode", 0);
 		L.RegConstant("UpdateMode", 0);
 		L.RegConstant("LuaByteMode", 0);
-		L.RegConstant("LuaBundleMode", 1);
+		L.RegConstant("LuaBundleMode", 0);
 		L.RegConstant("TimerInterval", 1);
 		L.RegConstant("GameFrameRate", 30);
 		L.RegVar("AppName", get_AppName, null);

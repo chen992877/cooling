@@ -62,7 +62,6 @@ public class SocketClient {
             return;
         }
         string recStr = Encoding.Default.GetString(readBuff, 2, bodyLength);
-        Debug.LogError(bodyLength);
         ReceiveMsg(recStr);
         //继续处理剩余字节            
         int start = 2 + bodyLength;
@@ -71,10 +70,22 @@ public class SocketClient {
         buffCount -= start;
         OnReceiveData();
     }
-
+    Queue<String> msgQueue = new Queue<string>();
     public void ReceiveMsg(string str)
     {
+        lock(msgQueue)
+        {
+            msgQueue.Enqueue(str);
+        }
         Debug.LogError("收到消息:" + str);
+    }
+
+    public Queue<String> MsgQueue
+    {
+        get
+        {
+            return msgQueue;
+        }
     }
 
     Queue<ByteArray> writeQueue = new Queue<ByteArray>();
@@ -134,6 +145,7 @@ public class SocketClient {
         if (client != null)
         {
             client.Disconnect(false);
+            client.Dispose();
             client = null;
             writeQueue.Clear();
             baCur = null;
